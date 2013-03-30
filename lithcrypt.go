@@ -63,7 +63,7 @@ func extractInt(s string, space int) int {
 }
 
 func injectInt(i int, space int) string {
-	return fmt.Sprintf(fmt.Sprintf("%%%dd", space), i)
+	return fmt.Sprintf(paddedIntFormat(space), i)
 }
 
 func xorKeyStream(cfb cipher.Stream, payload []byte) []byte {
