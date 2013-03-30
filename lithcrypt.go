@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"os"
 )
@@ -79,12 +78,6 @@ func getRandom(size int) ([]byte, error) {
 		return nil, err
 	}
 	return result, nil
-}
-
-func byteSliceToBase64(b []byte) string {
-	result := make([]byte, base64.StdEncoding.EncodedLen(len(b)))
-	base64.StdEncoding.Encode(result, b)
-	return string(result)
 }
 
 func genSalt() []byte {
