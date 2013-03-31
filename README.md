@@ -23,6 +23,7 @@ import (
     "encoding/base64"
     "fmt"
     "github.com/richard-lyman/lithcrypt"
+    "os"
 )
 
 func main() {
@@ -33,12 +34,14 @@ func main() {
     encrypted, encrypt_error := lithcrypt.Encrypt(password, payload)
     if encrypt_error != nil {
         fmt.Println("Failed to encrypt:", encrypt_error)
+        os.Exit(1)
     }
     fmt.Println("Encrypted payload:", byteSliceToBase64(encrypted))
 
     original, decrypt_error := lithcrypt.Decrypt(password, encrypted)
     if decrypt_error != nil {
         fmt.Println("Failed to decrypt:", decrypt_error)
+        os.Exit(1)
     }
     fmt.Println("Decrypted payload:", string(original))
 
