@@ -5,19 +5,25 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"fmt"
-	"os"
+  "fmt"
+  "io"
 )
 
-const salt_size = 128
+const salt_size = 16
 
 func Encrypt(password []byte, payload []byte) ([]byte, error) {
-    return ParameterizedEncrypt( password, payload, 32768, 8, 1, 32 )
+	return ParameterizedEncrypt(password, payload, 32768, 8, 1, 16)
 }
 
-func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, keyLen int ) ([]byte, error) {
-	salt := genSalt()
-	key := genKey(password, salt, N, r, p, keyLen)
+func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, keyLen int) ([]byte, error) {
+	salt, salt_error := getRandom(salt_size)
+	if salt_error != nil {
+		return nil, salt_error
+	}
+	key, key_error := genKey(password, salt, N, r, p, keyLen)
+	if key_error != nil {
+		return nil, key_error
+	}
 
 	c, err := aes.NewCipher(key)
 	if err != nil {
@@ -44,7 +50,10 @@ func Decrypt(password []byte, payload []byte) ([]byte, error) {
 	keyLen := extractInt(string(payload[salt_size+14:(salt_size+17)]), 3)
 	ivLen := extractInt(string(payload[salt_size+17:(salt_size+20)]), 3)
 	iv := payload[salt_size+20 : salt_size+20+ivLen]
-	key := genKey(password, salt, N, r, p, keyLen)
+	key, key_error := genKey(password, salt, N, r, p, keyLen)
+	if key_error != nil {
+		return nil, key_error
+	}
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -74,26 +83,12 @@ func xorKeyStream(cfb cipher.Stream, payload []byte) []byte {
 
 func getRandom(size int) ([]byte, error) {
 	result := make([]byte, size)
-	if _, err := rand.Read(result); err != nil {
+	if _, err := io.ReadFull(rand.Reader, result); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func genSalt() []byte {
-	salt, err := getRandom(salt_size)
-	if err != nil {
-		fmt.Println("Error generating salt:", err)
-		os.Exit(1)
-	}
-	return salt
-}
-
-func genKey(password []byte, salt []byte, N int, r int, p int, keyLen int) []byte {
-	key, err := scrypt.Key(password, salt, N, r, p, keyLen)
-	if err != nil {
-		fmt.Println("Error with scrypt:", err)
-		os.Exit(1)
-	}
-	return key
+func genKey(password []byte, salt []byte, N int, r int, p int, keyLen int) ([]byte, error) {
+	return scrypt.Key(password, salt, N, r, p, keyLen)
 }
