@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+  "errors"
   "fmt"
   "io"
 )
@@ -42,7 +43,12 @@ func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, 
 	return append(result, xorKeyStream(cipher.NewCFBEncrypter(c, iv), payload)...), nil
 }
 
-func Decrypt(password []byte, payload []byte) ([]byte, error) {
+func Decrypt(password []byte, payload []byte) (result []byte, err error) {
+  defer func(){
+    if r := recover(); r!= nil {
+      err = errors.New(fmt.Sprintf("%v",r))
+    }
+  }()
 	salt := payload[:salt_size]
 	N := extractInt(string(payload[salt_size:(salt_size+10)]), 10)
 	r := extractInt(string(payload[salt_size+10:(salt_size+12)]), 2)
