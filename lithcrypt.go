@@ -95,6 +95,6 @@ func GetRandom(size int) ([]byte, error) {
 	return result, nil
 }
 
-func genKey(password []byte, salt []byte, N int, r int, p int, keyLen int) ([]byte, error) {
+func GenKey(password []byte, salt []byte, N int, r int, p int, keyLen int) ([]byte, error) {
 	return scrypt.Key(password, salt, N, r, p, keyLen)
 }
