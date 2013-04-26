@@ -87,7 +87,7 @@ func xorKeyStream(cfb cipher.Stream, payload []byte) []byte {
 	return result
 }
 
-func getRandom(size int) ([]byte, error) {
+func GetRandom(size int) ([]byte, error) {
 	result := make([]byte, size)
 	if _, err := io.ReadFull(rand.Reader, result); err != nil {
 		return nil, err
