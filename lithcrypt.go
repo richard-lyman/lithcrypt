@@ -17,11 +17,11 @@ func Encrypt(password []byte, payload []byte) ([]byte, error) {
 }
 
 func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, keyLen int) ([]byte, error) {
-	salt, salt_error := getRandom(salt_size)
+	salt, salt_error := GetRandom(salt_size)
 	if salt_error != nil {
 		return nil, salt_error
 	}
-	key, key_error := genKey(password, salt, N, r, p, keyLen)
+	key, key_error := GenKey(password, salt, N, r, p, keyLen)
 	if key_error != nil {
 		return nil, key_error
 	}
@@ -30,7 +30,7 @@ func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, 
 	if err != nil {
 		return nil, err
 	}
-	iv, iv_err := getRandom(c.BlockSize())
+	iv, iv_err := GetRandom(c.BlockSize())
 	if iv_err != nil {
 		return nil, iv_err
 	}
@@ -56,7 +56,7 @@ func Decrypt(password []byte, payload []byte) (result []byte, err error) {
 	keyLen := extractInt(string(payload[salt_size+14:(salt_size+17)]), 3)
 	ivLen := extractInt(string(payload[salt_size+17:(salt_size+20)]), 3)
 	iv := payload[salt_size+20 : salt_size+20+ivLen]
-	key, key_error := genKey(password, salt, N, r, p, keyLen)
+	key, key_error := GenKey(password, salt, N, r, p, keyLen)
 	if key_error != nil {
 		return nil, key_error
 	}
