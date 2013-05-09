@@ -1,17 +1,17 @@
-# Install #
+### Install ###
 ```go get github.com/richard-lyman/lithcrypt/```
 
-# Dependencies #
+### Dependencies ###
  1. [scrypt](https://code.google.com/p/go/source/browse/scrypt?repo=crypto)
  2. [crypto/aes](http://golang.org/pkg/crypto/aes/)
  3. [crypto/cipher](http://golang.org/pkg/crypto/cipher/)
  4. [crypto/rand](http://golang.org/pkg/crypto/rand/)
 
-# Format #
+### Format ###
 The result of encrypting some byte slice is a header followed by the encrypted content.
 The header contains the salt, N, r, p, key length, and iv - enough to decrypt the content if the password is provided.
 
-# Example #
+### Example ###
  1. Run the installation command from above
  2. Place the following code in some file (we'll call ours 'main.go')
  3. From the same folder where you created your file ('main.go'), run the command ```go run main.go``` (replacing 'main.go' with whatever name you gave your file)
