@@ -1,27 +1,28 @@
 package lithcrypt
 
 import (
-	"code.google.com/p/go.crypto/scrypt"
+	"code.google.com/p/go.crypto/pbkdf2"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"io"
 )
 
-const salt_size = 16
+const salt_size = 32
 
 func Encrypt(password []byte, payload []byte) ([]byte, error) {
-	return ParameterizedEncrypt(password, payload, 32768, 8, 1, 16)
+	return ParameterizedEncrypt(password, payload, 4092, 32)
 }
 
-func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, keyLen int) ([]byte, error) {
+func ParameterizedEncrypt(password []byte, payload []byte, iter int, keyLen int) ([]byte, error) {
 	salt, salt_error := GetRandom(salt_size)
 	if salt_error != nil {
 		return nil, salt_error
 	}
-	key, key_error := GenKey(password, salt, N, r, p, keyLen)
+	key, key_error := GenKey(password, salt, iter, keyLen)
 	if key_error != nil {
 		return nil, key_error
 	}
@@ -35,9 +36,9 @@ func ParameterizedEncrypt(password []byte, payload []byte, N int, r int, p int, 
 		return nil, iv_err
 	}
 
-	result := make([]byte, 0, len(payload)+len(salt)+len(iv)+10+2+2+3+3)
+	result := make([]byte, 0, len(payload)+len(salt)+len(iv)+8+3+3)
 	result = append(result, salt...)
-	result = append(result, []byte(injectInt(N, 10)+injectInt(r, 2)+injectInt(p, 2)+injectInt(keyLen, 3)+injectInt(len(iv), 3))...)
+	result = append(result, []byte(injectInt(iter, 8)+injectInt(keyLen, 3)+injectInt(len(iv), 3))...)
 	result = append(result, iv...)
 
 	return append(result, xorKeyStream(cipher.NewCFBEncrypter(c, iv), payload)...), nil
@@ -50,13 +51,11 @@ func Decrypt(password []byte, payload []byte) (result []byte, err error) {
 		}
 	}()
 	salt := payload[:salt_size]
-	N := extractInt(string(payload[salt_size:(salt_size+10)]), 10)
-	r := extractInt(string(payload[salt_size+10:(salt_size+12)]), 2)
-	p := extractInt(string(payload[salt_size+12:(salt_size+14)]), 2)
-	keyLen := extractInt(string(payload[salt_size+14:(salt_size+17)]), 3)
-	ivLen := extractInt(string(payload[salt_size+17:(salt_size+20)]), 3)
-	iv := payload[salt_size+20 : salt_size+20+ivLen]
-	key, key_error := GenKey(password, salt, N, r, p, keyLen)
+	iter := extractInt(string(payload[salt_size:(salt_size+8)]), 8)
+	keyLen := extractInt(string(payload[salt_size+8:(salt_size+11)]), 3)
+	ivLen := extractInt(string(payload[salt_size+11:(salt_size+14)]), 3)
+	iv := payload[salt_size+14 : salt_size+14+ivLen]
+	key, key_error := GenKey(password, salt, iter, keyLen)
 	if key_error != nil {
 		return nil, key_error
 	}
@@ -64,7 +63,8 @@ func Decrypt(password []byte, payload []byte) (result []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-	return xorKeyStream(cipher.NewCFBDecrypter(c, iv), payload[salt_size+20+ivLen:]), nil
+    preresult := xorKeyStream(cipher.NewCFBDecrypter(c, iv), payload[salt_size+14+ivLen:])
+	return preresult, nil
 }
 
 func paddedIntFormat(space int) string {
@@ -95,6 +95,7 @@ func GetRandom(size int) ([]byte, error) {
 	return result, nil
 }
 
-func GenKey(password []byte, salt []byte, N int, r int, p int, keyLen int) ([]byte, error) {
-	return scrypt.Key(password, salt, N, r, p, keyLen)
+func GenKey(password []byte, salt []byte, iter int, keyLen int) ([]byte, error) {
+    result := pbkdf2.Key(password, salt, iter, keyLen, sha1.New)
+	return result, nil
 }
