@@ -1,13 +1,13 @@
 package lithcrypt
 
 import (
-	"code.google.com/p/go.crypto/pbkdf2"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/pbkdf2"
 	"io"
 )
 
@@ -63,7 +63,7 @@ func Decrypt(password []byte, payload []byte) (result []byte, err error) {
 	if err != nil {
 		return nil, err
 	}
-    preresult := xorKeyStream(cipher.NewCFBDecrypter(c, iv), payload[salt_size+14+ivLen:])
+	preresult := xorKeyStream(cipher.NewCFBDecrypter(c, iv), payload[salt_size+14+ivLen:])
 	return preresult, nil
 }
 
@@ -96,6 +96,6 @@ func GetRandom(size int) ([]byte, error) {
 }
 
 func GenKey(password []byte, salt []byte, iter int, keyLen int) ([]byte, error) {
-    result := pbkdf2.Key(password, salt, iter, keyLen, sha1.New)
+	result := pbkdf2.Key(password, salt, iter, keyLen, sha1.New)
 	return result, nil
 }
